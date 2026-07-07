@@ -104,7 +104,7 @@ function AiImage() {
       const imageUrl = await callGeminiImage(enriched, { aspectRatio: ratio });
       setImages([{ description: enriched, url: imageUrl }]);
     } catch (e) {
-      setError(friendlyError(e, "Gagal membuat gambar. Periksa kuota harian Gemini kamu."));
+      setError(friendlyError(e, "Gagal membuat gambar. Coba lagi sebentar lagi."));
     } finally {
       setLoading(false);
     }
@@ -140,7 +140,7 @@ function AiImage() {
         <PrimaryButton onClick={generate} loading={loading} disabled={!prompt.trim()}>
           Buat gambar
         </PrimaryButton>
-        <p className="hint-text">Gratis ~500 gambar/hari via Gemini (Nano Banana).</p>
+        <p className="hint-text">Gratis, ditenagai Cloudflare Workers AI (FLUX).</p>
       </div>
       <div className="panel result-panel">
         {error && <div className="error-banner">{error}</div>}

@@ -87,6 +87,9 @@ async function handleGenerateImage(request, env) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: `${prompt}. Aspect ratio: ${aspectRatio}.` }] }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+        },
       }),
     }
   );

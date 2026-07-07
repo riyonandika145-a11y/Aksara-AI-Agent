@@ -36,8 +36,11 @@ export function friendlyError(e, fallback) {
   if (e?.message === "GEMINI_API_KEY_MISSING") {
     return "Belum ada API key Gemini. Tambahkan GEMINI_API_KEY di Environment Variables (Secret) Cloudflare Pages.";
   }
+  if (e?.message === "IMAGE_GEN_ERROR") {
+    return "Layanan pembuat gambar sedang bermasalah. Coba lagi sebentar lagi.";
+  }
   if (e?.message === "NO_IMAGE") {
-    return "Tidak ada gambar di respons Gemini.";
+    return "Gagal membuat gambar. Coba ubah deskripsinya, lalu coba lagi.";
   }
   if (e?.message === "GEMINI_ERROR") {
     return "Gemini sedang bermasalah atau kuota harian habis. Coba lagi nanti.";

@@ -62,12 +62,9 @@ async function handleGenerate(request, env) {
 }
 
 // ── /api/generate-image ──────────────────────────────────────────────────
+// Pakai Cloudflare Workers AI (gratis, 10.000 neuron/hari) — bukan Gemini,
+// supaya generate gambar tidak butuh billing sama sekali.
 async function handleGenerateImage(request, env) {
-  const apiKey = env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return json({ error: "GEMINI_API_KEY_MISSING" }, 500);
-  }
-
   let body;
   try {
     body = await request.json();
@@ -80,34 +77,31 @@ async function handleGenerateImage(request, env) {
     return json({ error: "PROMPT_REQUIRED" }, 400);
   }
 
-  const upstream = await fetchWithRetry(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: `${prompt}. Aspect ratio: ${aspectRatio}.` }] }],
-        generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"],
-        },
-      }),
+  // FLUX butuh width/height eksplisit (kelipatan 8), bukan string aspect ratio.
+  const dimensionMap = {
+    "1:1": { width: 1024, height: 1024 },
+    "4:5": { width: 896, height: 1120 },
+    "16:9": { width: 1280, height: 720 },
+    "9:16": { width: 720, height: 1280 },
+  };
+  const { width, height } = dimensionMap[aspectRatio] || dimensionMap["1:1"];
+
+  try {
+    const result = await env.AI.run("@cf/black-forest-labs/flux-1-schnell", {
+      prompt,
+      width,
+      height,
+    });
+
+    // Model ini mengembalikan { image: "<base64 tanpa prefix>" }
+    if (!result?.image) {
+      return json({ error: "NO_IMAGE" }, 502);
     }
-  );
 
-  const data = await upstream.json().catch(() => ({}));
-
-  if (!upstream.ok) {
-    return json({ error: "GEMINI_ERROR", status: upstream.status, detail: data }, upstream.status);
+    return json({ url: `data:image/jpeg;base64,${result.image}` });
+  } catch (err) {
+    return json({ error: "GEMINI_ERROR", status: 502, detail: String(err) }, 502);
   }
-
-  const parts = data?.candidates?.[0]?.content?.parts || [];
-  const imagePart = parts.find((p) => p.inlineData);
-  if (!imagePart) {
-    return json({ error: "NO_IMAGE" }, 502);
-  }
-
-  const { mimeType, data: base64 } = imagePart.inlineData;
-  return json({ url: `data:${mimeType};base64,${base64}` });
 }
 
 // ── Helper ────────────────────────────────────────────────────────────────

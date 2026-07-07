@@ -100,7 +100,7 @@ async function handleGenerateImage(request, env) {
 
     return json({ url: `data:image/jpeg;base64,${result.image}` });
   } catch (err) {
-    return json({ error: "GEMINI_ERROR", status: 502, detail: String(err) }, 502);
+    return json({ error: "IMAGE_GEN_ERROR", status: 502, detail: String(err) }, 502);
   }
 }
 
